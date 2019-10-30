@@ -1,0 +1,83 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Fractal Visualizer</title>
+        <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
+  <link rel="icon" href="favicon.ico" type="image/x-icon">
+    <script src="src/dancer.js"></script>
+    <script src="src/support.js"></script>
+    <script src="src/kick.js"></script>
+    <script src="src/adapterWebkit.js"></script>
+    <script src="src/adapterMoz.js"></script>
+    <script src="src/adapterFlash.js"></script>
+    <script src="lib/fft.js"></script>
+    <script src="lib/flash_detect.js"></script>
+    <script src="plugins/dancer.fft.js"></script>
+    <script src="plugins/dancer.waveform.js"></script>
+
+    <script type="text/javascript" src="visualizer.js"> </script>
+    <style type="text/css">
+    #canvas {
+      padding-left: 0;
+      padding-right: 0;
+      margin-top: 0px;
+      margin-bottom: 100px;
+      margin-left: auto;
+      margin-right: auto;
+      display: block;   
+    }
+
+    #loading {
+        text-decoration: none;  
+        font-size: 40px;
+        color: #ffffff;
+        width: 500px;
+        margin-left: auto;
+        margin-right: auto;
+        margin-top: 100px;
+        background-color: #111;
+        padding: 10px;
+        -webkit-border-radius: 10px;
+        -moz-border-radius: 10px;
+        border-radius: 10px;
+        opacity: 0.9;
+        border: 1px solid #ccc;
+        text-align: center;
+        text-shadow: 0 0 10px #fff;
+        cursor: pointer;
+    }
+
+    .btn {
+        text-decoration: none;  
+        font-size: 40px;
+        color: #ffffff;
+        width: 500px;
+        margin-left: auto;
+        margin-right: auto;
+        margin-top: 10px;
+        background-color: #111;
+        padding: 10px;
+        -webkit-border-radius: 10px;
+        -moz-border-radius: 10px;
+        border-radius: 10px;
+        opacity: 0.9;
+        border: 1px solid #ccc;
+        text-align: center;
+        text-shadow: 0 0 10px #fff;
+        cursor: pointer;
+    }
+
+    </style>
+  </head>
+  <body bgcolor=#000000 text=#FFFFFF>
+    <div id="loading" onclick="chooseSong(this)">Play Aldgate Patterns</div>
+    <div id="btn2" class="btn" onclick="chooseSong(this)">Play Walking in the Air</div>
+    <div id="btn3" class="btn" onclick="chooseSong(this)">Play Conduit</div>
+    <div id="btn4" class="btn" onclick="chooseSong(this)">Play Something to Look Forward To</div>
+    <div id="btn5" class="btn" onclick="chooseSong(this)">Play Guys Eyes</div>    
+    <canvas id="canvas" width="700" height="700"></canvas>
+    <div id="credit">
+    <a id='msong'></a><a id='mlink'></a>
+  </div>
+  </body>
+</html>

@@ -1,0 +1,25 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Fractal Visualizer</title>
+    <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
+  <link rel="icon" href="favicon.ico" type="image/x-icon">
+    <script type="text/javascript" src="frac_draw.js"> </script>
+    <style type="text/css">
+    #canvas {border: 1px solid black; }
+    #tempoLabel {resize: none;}
+    .btn { font-size: 1.41em;}
+    </style>
+  </head>
+  <body>
+    <canvas id="canvas" width="700" height="700"></canvas>
+    <canvas id="colSelect" width="300" height="700"></canvas> 
+    <p><button class="btn" id="clrbtn" type="button" onclick="clearScn()">
+        Clear</button>
+       <button class="btn"id="tapButton" type="button" onclick="updateTempo()">
+        Tap</button>
+     Tempo: 
+    <textarea id="tempoLabel" rows="1" cols="6" onchange="newTempo(this.value)"
+    value=120.0> 120.0 </textarea></p>
+  </body>
+</html>

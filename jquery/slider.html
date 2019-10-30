@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="us">
+<head>
+	<meta charset="utf-8">
+	<title>jQuery UI Example Page</title>
+	<link href="css/ui-lightness/jquery-ui-1.10.2.custom.css" rel="stylesheet">
+	<script src="js/jquery-1.9.1.js"></script>
+	<script src="js/jquery-ui-1.10.2.custom.js"></script>
+	<script>
+	$(function() {
+		
+	
+		$( ".slider" ).slider({
+			orientation: "vertical",
+		});
+
+	});
+	</script>
+	<style>
+	body{
+		font: 62.5% "Trebuchet MS", sans-serif;
+		margin: 50px;
+	}
+	.sliderTitles {
+		margin-top: 2em;
+	}
+	
+	#s_container{
+		float: left;
+	}
+
+	.slider{
+		float: right;
+		height: 250px;
+		margin-right: 50px;
+	}
+
+	</style>
+</head>
+<body>
+
+<!-- Slider -->
+<h2 class="sliderTitles">Slider</h2>
+
+<div id="s_container">
+<div class="slider" id="slider1"></div>
+<div class="slider" id="slider2"></div>
+<div class="slider" id="slider3"></div>
+</div>
+
+</body>
+</html>

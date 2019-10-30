@@ -1,0 +1,327 @@
+<script id="vShader" type="x-shader/x-vertex">
+attribute vec2 a_position;
+  void main() {
+    gl_Position = vec4(a_position, 0, 1);
+  }
+</script>
+
+<script id="fShader" type="x-shader/x-fragment">
+
+#define NUM_STEPS 50
+#define EPSILON 0.01
+#define ROOT_EPSILON 0.0001
+#define HALF_SQRT_3 0.866
+
+#ifdef GL_FRAGMENT_PRECISION_HIGH
+    precision highp float;
+#else
+    precision mediump float;
+#endif
+
+precision mediump int;
+
+uniform vec2 center;
+uniform float zoom;
+uniform float xwidth;
+uniform float yheight;
+uniform vec2 r1;
+uniform vec2 r2;
+uniform vec2 r3;
+
+vec2 cAdd( vec2 x, vec2 y ){
+  return vec2( x.x + y.x, x.y + y.y );
+}
+
+vec2 cSub( vec2 x, vec2 y ){
+  return vec2( x.x - y.x, x.y - y.y );
+}
+
+vec2 cMult( vec2 x, vec2 y ){
+  return vec2( x.x * y.x - x.y * y.y, x.x * y.y + x.y * y.x );
+}
+
+vec2 cDiv( vec2 n, vec2 d ){
+  float den = d.x * d.x + d.y * d.y;
+  if( den == 0.0 ){
+    den = 0.0001;
+  }
+  return vec2( ( n.x * d.x + n.y * d.y ) / den, ( n.y * d.x - n.x * d.y ) / den );
+}
+
+float sqr( float x ){
+  return x * x;
+}
+
+void main() {
+    vec2 z;
+    z.x = (gl_FragCoord.x - xwidth/2.0) * zoom / yheight + center.x;
+    z.y = (gl_FragCoord.y / yheight - 0.5) * zoom - center.y;
+
+    vec4 col = vec4( 1.0, 1.0, 1.0, 1.0 );
+
+    if( sqr(z.x - r1.x) + sqr(z.y - r1.y) < ROOT_EPSILON
+     || sqr(z.x - r2.x) + sqr(z.y - r2.y) < ROOT_EPSILON
+     || sqr(z.x - r3.x) + sqr(z.y - r3.y) < ROOT_EPSILON ){
+      gl_FragColor = col;
+      return;
+    }
+
+    col = vec4( 0.0, 0.0, 0.0, 1.0 );
+    vec2 p1, p2, p3;
+    vec2 num, den, frac;
+
+    for(int i = 0; i < NUM_STEPS; i++){
+      p1 = cSub( z, r1 );
+      p2 = cSub( z, r2 );
+      p3 = cSub( z, r3 );
+
+      num = cMult( p1, cMult( p2, p3 ) );
+      den = cAdd( cMult( p1, p2 ), cAdd( cMult( p2, p3 ), cMult( p1, p3 ) ) );
+
+      frac = cDiv( num, den );
+
+      z = cSub( z, frac );
+      if( abs(z.x - r1.x) < EPSILON && abs(z.y - r1.y) < EPSILON){
+        float shade = float(i)/float(NUM_STEPS);
+        col = vec4(0.71, 0.098, 0.761, 1.0) - vec4( shade, shade, shade, 0.0 );
+        break;
+      }
+      if( abs(z.x - r2.x) < EPSILON && abs(z.y - r2.y) < EPSILON){
+        float shade = float(i)/float(NUM_STEPS);
+        col = vec4(0.0, 0.0, 0.8 - shade, 1.0) - vec4( shade, shade, shade, 0.0 );
+        break;
+      }
+      if( abs(z.x - r3.x) < EPSILON && abs(z.y - r3.y) < EPSILON){
+        float shade = float(i)/float(NUM_STEPS);
+        col = vec4(0.0, 0.8 - shade, 0.0, 1.0) - vec4( shade, shade, shade, 0.0 );
+        break;
+      }
+    }
+    gl_FragColor = col;
+}
+</script>
+
+<script type="text/javascript">
+
+  var width = window.innerWidth;
+  var height = window.innerHeight;
+
+  var startTime;
+  var curTime;
+
+  var gl;
+  var canvas;
+  var buffer;
+ 
+  var shaderScript;
+  var shaderSource;
+  var vertexShader;
+  var fragmentShader;
+
+  var center = {
+    x: 0.0,
+    y: 0.0
+  }
+  var zoom = 3.0;
+
+  var roots = {
+    r1: {
+      x: 1.0,
+      y: 0.0
+    },
+    r2: {
+      x: -0.5,
+      y: 0.866
+    },
+    r3: {
+      x: -0.5,
+      y: -0.866
+    }
+  }
+
+  window.onload = init;
+ 
+  var clickTracker = {
+    leftDown: false,
+    rightDown: false,
+    clickPos: {
+      center: {
+        x: 0.0,
+        y: 0.0
+      },
+      omegaX: 0.0,
+      omegaY: 0.0
+    },
+    curPos: {
+      x: 0.0,
+      y: 0.0
+    },
+    zoomTimeout: null,
+    zoomPrepTimeout: null
+  };
+
+  function beginZoom(){
+    clickTracker.isZoomingIn = true;
+    scaleZoom( 0.99 );
+  }
+
+  function resetCenter(){
+    center.x = clickTracker.clickPos.omegaX - zoom * (clickTracker.curPos.x - 0.5 * width) / height + clickTracker.clickPos.center.x;
+    center.y = -clickTracker.clickPos.omegaY + zoom * (0.5 - clickTracker.curPos.y / height) + clickTracker.clickPos.center.y;    
+  }
+
+  function scaleZoom( s ){
+    zoom *= s;
+    resetCenter();
+    clickTracker.zoomTimeout = setTimeout( function(){scaleZoom(s);}, 16 );
+  }
+
+  function setClickPos(evt){
+      clickTracker.clickPos.center.x = center.x;
+      clickTracker.clickPos.center.y = center.y;
+      clickTracker.clickPos.omegaX = zoom * ( evt.x - 0.5 * width ) / height;
+      clickTracker.clickPos.omegaY = zoom * ( 0.5 - evt.y / height );
+  }
+
+  function canvasMouseDown(evt){
+    if(evt.button == 0 && !clickTracker.rightDown){
+      setClickPos(evt);
+      clickTracker.leftDown = true;
+      clickTracker.zoomPrepTimeout = setTimeout( beginZoom, 500 );
+    }
+    else if(evt.button == 2 && !clickTracker.leftDown){
+      setClickPos(evt);
+      clickTracker.rightDown = true;
+      scaleZoom( 1.01 );
+    }
+  }
+
+  function canvasMouseUp(evt){
+    if(evt.button == 0 && !clickTracker.rightDown){
+        clickTracker.leftDown = false;
+        if( clickTracker.zoomTimeout ){
+          clearTimeout( clickTracker.zoomTimeout );
+        }
+        if( clickTracker.zoomPrepTimeout ){
+          clearTimeout( clickTracker.zoomPrepTimeout );
+        }
+    }
+    else if(evt.button == 2 && !clickTracker.leftDown){
+        clickTracker.rightDown = false;
+        if( clickTracker.zoomTimeout ){
+          clearTimeout( clickTracker.zoomTimeout );
+        }
+    }
+  }
+
+  function canvasMouseMove(evt){
+    clickTracker.curPos.x = evt.x;
+    clickTracker.curPos.y = evt.y;
+    if(!(clickTracker.leftDown || clickTracker.rightDown)){
+        return;
+    }
+    if( clickTracker.zoomPrepTimeout ){
+      clearTimeout( clickTracker.zoomPrepTimeout )
+    }
+    resetCenter();
+  }
+
+  function init() {
+ 
+    canvas        = document.getElementById('glscreen');
+    gl            = canvas.getContext('webgl');
+    canvas.width  = Math.round(width);
+    canvas.height = Math.round(height);
+
+    var d = new Date();
+    startTime = d.getTime();
+
+    canvas.addEventListener('mousedown', canvasMouseDown);
+    canvas.addEventListener('mouseup', canvasMouseUp);
+    canvas.addEventListener('mousemove', canvasMouseMove);
+
+    canvas.oncontextmenu = function(e){e.preventDefault();};
+
+    gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
+ 
+    buffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+    gl.bufferData(
+    gl.ARRAY_BUFFER, 
+    new Float32Array([
+      -1.0, -1.0, 
+       1.0, -1.0, 
+      -1.0,  1.0, 
+      -1.0,  1.0, 
+       1.0, -1.0, 
+       1.0,  1.0]), 
+    gl.STATIC_DRAW
+    );
+
+  shaderScript = document.getElementById("vShader");
+  shaderSource = shaderScript.text;
+  vertexShader = gl.createShader(gl.VERTEX_SHADER);
+  gl.shaderSource(vertexShader, shaderSource);
+  gl.compileShader(vertexShader);
+ 
+  shaderScript   = document.getElementById("fShader");
+  shaderSource   = shaderScript.text;
+  fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
+  gl.shaderSource(fragmentShader, shaderSource);
+  gl.compileShader(fragmentShader);
+ 
+  program = gl.createProgram();
+  gl.attachShader(program, vertexShader);
+  gl.attachShader(program, fragmentShader);
+  gl.linkProgram(program);    
+  gl.useProgram(program);
+
+    render();
+ 
+  }
+
+  function render() {
+ 
+    window.requestAnimationFrame(render, canvas);
+
+    var d = new Date();
+    curTime = d.getTime() - startTime;
+    var time = curTime / 1000.0;
+
+    var p0 = 3;
+    var p1 = 4;
+    var p2 = 7;
+    var p3 = 11;
+    var r = 0.3 * Math.sin( time / p0 );
+
+    roots.r1.x = 1.0 + r * Math.cos( time / p1);
+    roots.r1.y = 0.0 + r * Math.sin( time / p1);
+
+    roots.r2.x = -0.5  - r * Math.cos( time / p2);
+    roots.r2.y = 0.866 + r * Math.sin( time / p2);
+
+    roots.r3.x = -0.5   - r * Math.cos( time / p3);
+    roots.r3.y = -0.866 - r * Math.sin( time / p3);
+
+    gl.clearColor(0.0, 0.0, 0.0, 1.0);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+
+
+  positionLocation = gl.getAttribLocation(program, 'a_position');
+  gl.enableVertexAttribArray(positionLocation);
+  gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
+
+  gl.uniform2f(gl.getUniformLocation(program, 'center'), center.x, center.y);
+  gl.uniform1f(gl.getUniformLocation(program, 'zoom'), zoom);
+  gl.uniform1f(gl.getUniformLocation(program, 'xwidth'), width);
+  gl.uniform1f(gl.getUniformLocation(program, 'yheight'), height);
+  gl.uniform2f(gl.getUniformLocation(program, 'r1'), roots.r1.x, roots.r1.y);
+  gl.uniform2f(gl.getUniformLocation(program, 'r2'), roots.r2.x, roots.r2.y);
+  gl.uniform2f(gl.getUniformLocation(program, 'r3'), roots.r3.x, roots.r3.y);
+
+  gl.drawArrays(gl.TRIANGLES, 0, 6);
+
+  }
+</script>
+
+<canvas id="glscreen"></canvas>
