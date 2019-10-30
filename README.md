@@ -1,5 +1,4 @@
-web-projects
+peterjlewis.com
 ============
 
-fracdraw.js contains the Fractal Draw code,
-tenclock.js contains the Base 10 clock code
+a collection of web graphics projects and links to music
